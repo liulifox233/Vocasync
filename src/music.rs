@@ -1,6 +1,6 @@
 use serde::{self,Serialize};
 use uuid::Uuid;
-use std::time;
+use std::time::{self, Duration};
 use crate::{
     source::{Source,self},
     user::User
@@ -10,9 +10,7 @@ use crate::{
 #[derive(Clone, Serialize)]
 pub struct CurrentMusic{
     pub music: Music,
-    pub start_time: time::SystemTime,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub requester: Option<User>
+    pub start_time: time::SystemTime
 }
 
 #[derive(Serialize)]
@@ -21,7 +19,7 @@ pub struct SerializeCurrentMusic{
     pub music: Option<Music>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<u64>,
-    pub play_now: bool
+    pub is_play: bool
 }
 
 #[derive(Clone, Serialize)]
@@ -34,11 +32,25 @@ pub struct Music{
     pub url_timeout: Option<time::SystemTime>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cover: Option<String>,
-    pub name: String,
+    pub title: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub album: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub artist: Option<Vec<String>>,
+    pub artist: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub years: Option<String>
+    pub year: Option<String>,
+    #[serde(skip_serializing)]
+    pub play_id: Option<Uuid>,
+    #[serde(skip_serializing)]
+    pub requester: Option<Uuid>,
+    pub duration: Duration
+}
+
+#[derive(Serialize)]
+pub struct SerializePlayList{
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub music: Option<Music>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub position: Option<u64>,
+    pub play_now: bool
 }

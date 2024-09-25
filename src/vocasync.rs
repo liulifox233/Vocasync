@@ -1,18 +1,20 @@
 use std::{sync::Arc, thread::sleep, time};
-use deadpool::managed::Pool;
-use deadpool_postgres;
+use tokio::sync::RwLock;
+use tower_sessions::{session_store::ExpiredDeletion, Expiry, Session, SessionManagerLayer};
+use tower_sessions_sqlx_store::{sqlx::PgPool, PostgresStore};
 use anyhow::Result;
-use tokio_postgres::NoTls;
+use std::ops::DerefMut;
 use std::ops::Deref;
 use crate::{
     config::Config,
     music::{CurrentMusic, SerializeCurrentMusic}, 
     room::Room
 };
+use sqlx::{postgres, pool};
 
 pub struct Inner{
     pub config: Config,
-    pub pg_pool: Pool<deadpool_postgres::Manager>,
+    pub pg_pool: postgres::PgPool,
     pub room: Room
 }
 
@@ -21,11 +23,9 @@ pub struct Vocasync(Arc<Inner>);
 impl Vocasync{
     pub async fn new(config: Config) -> Result<Self> {
         config.check().await?;
+        let pg_pool = postgres::PgPool::connect_lazy(&config.database_url)?;
 
-        let pg_pool = config
-            .database
-            .create_pool(Some(deadpool_postgres::Runtime::Tokio1), NoTls)?;
-        let room = Room::new().await?;
+        let room = Room::new().await?.into();
 
         let inner = Arc::new(Inner {
             config,
@@ -45,4 +45,5 @@ impl Deref for Vocasync {
         &self.0
     }
 }
+
 

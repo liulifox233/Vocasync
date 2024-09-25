@@ -3,8 +3,8 @@ use axum::{
     response::{IntoResponse, Response},
 };
 
-pub struct VocasyncError(anyhow::Error);
-impl IntoResponse for VocasyncError {
+pub struct Error(anyhow::Error);
+impl IntoResponse for Error {
     fn into_response(self) -> Response {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -14,7 +14,7 @@ impl IntoResponse for VocasyncError {
     }
 }
 
-impl<E> From<E> for VocasyncError
+impl<E> From<E> for Error
 where
     E: Into<anyhow::Error>,
 {

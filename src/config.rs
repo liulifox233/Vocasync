@@ -10,7 +10,7 @@ pub struct Config {
     #[serde(default = "default_listen_address")]
     pub listen_address: String,
 
-    pub database: deadpool_postgres::Config,
+    pub database_url: String,
 }
 
 impl Config {
