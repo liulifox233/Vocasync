@@ -48,9 +48,8 @@ pub struct Music{
 
 #[derive(Serialize)]
 pub struct SerializePlayList{
+    pub total: u64,
+    pub music_list: Vec<Music>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub music: Option<Music>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub position: Option<u64>,
-    pub play_now: bool
+    pub play_now: Option<CurrentMusic>
 }

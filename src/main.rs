@@ -44,7 +44,9 @@ async fn main() -> Result<()> {
     let app = Router::new()
         .route("/", get(welcome))
         .route("/api/currentPlay", get(get_current_play))
+        .route("/api/playList", get(get_play_list))
         .route("/test/play", get(play_test))
+        .route("/test/add", get(add_test))
         .with_state(vocasync)
         .layer(session_layer);
     let listener = tokio::net::TcpListener::bind(config.listen_address)

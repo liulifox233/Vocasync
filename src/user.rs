@@ -5,9 +5,9 @@ use anyhow::Result;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct User {
-    id: Uuid,
-    name: String,
-    avatar: Option<String>
+    pub id: Uuid,
+    pub name: String,
+    pub avatar: Option<String>
 }
 
 impl User {

@@ -5,6 +5,7 @@ use tokio::sync::RwLock;
 use tokio::time::sleep;
 use uuid::Uuid;
 
+use crate::music::SerializePlayList;
 use crate::{
     music::{
         CurrentMusic, Music, SerializeCurrentMusic
@@ -27,27 +28,27 @@ impl Room {
         let mut musiclist = Vec::new();
         let last_time = time::SystemTime::now();
         let last_person = "最後の初音ミク".to_string();
-        let music = Music{
-            uuid: uuid::Uuid::new_v4(),
-            source: None,
-            url: String::from_str("http://localhost:11451")?,
-            url_timeout: None,
-            cover: None,
-            title: String::from_str("初音ミクの消失")?,
-            album: None,
-            artist: None,
-            year: None,
-            play_id: Some(uuid::Uuid::new_v4()),
-            requester: None,
-            duration: Duration::new(10, 0)
-        };
-        musiclist.push(music.clone());
-        let current_play = RwLock::new(Some(CurrentMusic{
-            music,
-            start_time: time::SystemTime::now()
-        }));
+        // let music = Music{
+        //     uuid: uuid::Uuid::new_v4(),
+        //     source: None,
+        //     url: String::from_str("http://localhost:11451")?,
+        //     url_timeout: None,
+        //     cover: None,
+        //     title: String::from_str("初音ミクの消失")?,
+        //     album: None,
+        //     artist: None,
+        //     year: None,
+        //     play_id: Some(uuid::Uuid::new_v4()),
+        //     requester: None,
+        //     duration: Duration::new(10, 0)
+        // };
+        // musiclist.push(music.clone());
+        // let current_play = RwLock::new(Some(CurrentMusic{
+        //     music,
+        //     start_time: time::SystemTime::now()
+        // }));
         let musiclist = RwLock::new(musiclist);
-        // let current_play = None;
+        let current_play = RwLock::new(None);
 
         let res = Self {
             userlist,
@@ -57,6 +58,19 @@ impl Room {
             current_play,
         };
 
+        Ok(res)
+    }
+
+    pub async fn get_play_list_serialize(&self) -> Result<SerializePlayList> {
+        let music_list = self.musiclist.read().await.to_owned();
+        let play_now = self.current_play.read().await.to_owned();
+        let total = music_list.len().try_into()?;
+        
+        let res = SerializePlayList {
+            total,
+            music_list,
+            play_now
+        };
         Ok(res)
     }
 
@@ -86,14 +100,10 @@ impl Room {
         Ok(res)
     }
 
-    pub async fn add_music(&mut self, mut music: Music, requester: Uuid) -> Result<()> {
+    pub async fn add_music(&self, mut music: Music, requester: Uuid) -> Result<()> {
         music.play_id = Some(uuid::Uuid::new_v4());
         music.requester = Some(requester);
         self.musiclist.write().await.insert(0, music);
-        match *self.current_play.read().await {
-            None => {self.play().await?},
-            _ => ()
-        }
         Ok(())
     }
 
@@ -103,29 +113,35 @@ impl Room {
         match it.position(|m| m.play_id == music.play_id) {
             Some(p) => {
                 let removed_music = musiclist.remove(p);
-                musiclist.insert(0,removed_music);
+                musiclist.push(removed_music);
                 Ok(())
             },
             None => Err(anyhow::anyhow!("Can not find music"))
         }
     }
 
-    pub async fn play(&self) -> Result<()> {//既可以用作播放也可用作切歌
+    pub async fn play(&self) -> Result<()> { // 既可以用作播放也可用作切歌
         loop {
-            if let Some(next_play) = self.musiclist.write().await.pop() {
-                let current_play = Some(CurrentMusic {
+            let mut musiclist_write = self.musiclist.write().await;
+            if let Some(next_play) = musiclist_write.pop() {
+                drop(musiclist_write);
+                let now_play = Some(CurrentMusic {
                     music: next_play.clone(),
                     start_time: std::time::SystemTime::now(),
                 });
-                *self.current_play.write().await = current_play.clone();
-                sleep(next_play.duration + Duration::new(1, 0)).await;
-                if let (Some(before), Some(now)) = (self.current_play.read().await.clone(), current_play) {
+                let duration = next_play.duration.to_owned();
+                let mut current_play_write = self.current_play.write().await;
+                *current_play_write = now_play.clone();
+                drop(current_play_write);
+                tokio::time::sleep(duration + std::time::Duration::new(1, 0)).await;
+                if let (Some(before), Some(now)) = (self.current_play.read().await.clone(), now_play) {
                     if before.music.play_id != now.music.play_id {
                         return Ok(());
-                    } 
+                    }
                 }
-            }else {
-                *self.current_play.write().await = None;
+            } else {
+                let mut current_play = self.current_play.write().await;
+                *current_play = None;
                 return Ok(());
             }
         }
