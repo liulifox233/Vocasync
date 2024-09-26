@@ -3,9 +3,12 @@ use tower_sessions::Session;
 use uuid::Uuid;
 use anyhow::Result;
 
-#[derive(Clone, Serialize, Deserialize)]
+use crate::source::Source;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct User {
     pub id: Uuid,
+    pub source: Option<Source>,
     pub name: String,
     pub avatar: Option<String>
 }
@@ -20,6 +23,7 @@ impl User {
                 let avatar = None;
                 User {
                     id,
+                    source: None,
                     name,
                     avatar
                 }

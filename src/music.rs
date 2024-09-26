@@ -7,14 +7,14 @@ use crate::{
 };
 
 
-#[derive(Clone, Serialize)]
-pub struct CurrentMusic{
+#[derive(Clone, Serialize, Debug)]
+pub struct PlayableMusic{
     pub music: Music,
     pub start_time: time::SystemTime
 }
 
-#[derive(Serialize)]
-pub struct SerializeCurrentMusic{
+#[derive(Serialize, Debug)]
+pub struct SerializePlayableMusic{
     #[serde(skip_serializing_if = "Option::is_none")]
     pub music: Option<Music>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -22,12 +22,12 @@ pub struct SerializeCurrentMusic{
     pub is_play: bool
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, Debug)]
 pub struct Music{
     pub uuid: Uuid,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<Source>,
-    pub url: String,
+    pub url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub url_timeout: Option<time::SystemTime>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -51,5 +51,5 @@ pub struct SerializePlayList{
     pub total: u64,
     pub music_list: Vec<Music>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub play_now: Option<CurrentMusic>
+    pub play_now: Option<PlayableMusic>
 }

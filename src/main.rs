@@ -6,6 +6,7 @@ mod user;
 mod room;
 mod music;
 mod source;
+mod api;
 
 use crate::{
     config::Config,
@@ -47,6 +48,10 @@ async fn main() -> Result<()> {
         .route("/api/playList", get(get_play_list))
         .route("/test/play", get(play_test))
         .route("/test/add", get(add_test))
+        .route("/test/search/:name", get(search_user_test))
+        .route("/test/music_id/:id", get(get_music_by_id_test))
+        .route("/test/get_user_playlist/:id", get(get_user_playlist_test))
+        .route("/test/get_music_by_playlist/:id", get(get_music_by_playlist_test))
         .with_state(vocasync)
         .layer(session_layer);
     let listener = tokio::net::TcpListener::bind(config.listen_address)

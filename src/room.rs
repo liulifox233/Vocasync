@@ -8,7 +8,7 @@ use uuid::Uuid;
 use crate::music::SerializePlayList;
 use crate::{
     music::{
-        CurrentMusic, Music, SerializeCurrentMusic
+        PlayableMusic, Music, SerializePlayableMusic
     }, 
     source::SourceKind, 
     user::User
@@ -19,7 +19,7 @@ pub struct Room {
     pub musiclist: RwLock<Vec<Music>>,
     pub last_time: time::SystemTime,
     pub last_person: String,
-    pub current_play: RwLock<Option<CurrentMusic>>,
+    pub current_play: RwLock<Option<PlayableMusic>>,
 }
 
 impl Room {
@@ -74,7 +74,7 @@ impl Room {
         Ok(res)
     }
 
-    pub async fn get_current_play_serialize(&self) -> Result<SerializeCurrentMusic> {
+    pub async fn get_current_play_serialize(&self) -> Result<SerializePlayableMusic> {
         let current_music = self.current_play.read().await.clone();
         let position;
         let is_play;
@@ -92,7 +92,7 @@ impl Room {
             }
         };
 
-        let res = SerializeCurrentMusic {
+        let res = SerializePlayableMusic {
             music,
             position,
             is_play
@@ -125,7 +125,7 @@ impl Room {
             let mut musiclist_write = self.musiclist.write().await;
             if let Some(next_play) = musiclist_write.pop() {
                 drop(musiclist_write);
-                let now_play = Some(CurrentMusic {
+                let now_play = Some(PlayableMusic {
                     music: next_play.clone(),
                     start_time: std::time::SystemTime::now(),
                 });
