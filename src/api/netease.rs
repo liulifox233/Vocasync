@@ -145,7 +145,7 @@ impl MusicApi for NeteaseApi {
                 self.cookie.clone()
             )).await?;
         let res = res.json::<Value>().await?;
-        if res.get("code").unwrap().as_u64().unwrap() != 200 {
+        if res.get("code").unwrap().as_u64().unwrap() != 200 || res.get("songs").unwrap().as_array().unwrap().len() == 0 {
             return Err(anyhow::anyhow!("Song not found"));
         }
         let music = self.parse_music(&res).await?;
