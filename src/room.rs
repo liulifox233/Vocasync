@@ -22,28 +22,9 @@ pub struct Room {
 impl Room {
     pub async fn new() -> Result<Self>{//暂时直接初始化，之后会加上从数据库加载数据的功能
         let userlist = Vec::new();
-        let mut musiclist = Vec::new();
+        let musiclist = Vec::new();
         let last_time = time::SystemTime::now();
         let last_person = "最後の初音ミク".to_string();
-        // let music = Music{
-        //     uuid: uuid::Uuid::new_v4(),
-        //     source: None,
-        //     url: String::from_str("http://localhost:11451")?,
-        //     url_timeout: None,
-        //     cover: None,
-        //     title: String::from_str("初音ミクの消失")?,
-        //     album: None,
-        //     artist: None,
-        //     year: None,
-        //     play_id: Some(uuid::Uuid::new_v4()),
-        //     requester: None,
-        //     duration: Duration::new(10, 0)
-        // };
-        // musiclist.push(music.clone());
-        // let current_play = RwLock::new(Some(CurrentMusic{
-        //     music,
-        //     start_time: time::SystemTime::now()
-        // }));
         let musiclist = RwLock::new(musiclist);
         let current_play = RwLock::new(None);
 

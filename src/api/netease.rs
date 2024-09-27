@@ -45,7 +45,7 @@ impl NeteaseApi {
         if res.get("code").unwrap().as_u64().unwrap() != 200 {
             return Err(anyhow::anyhow!("Get song failed!"));
         }else {
-            music.url = Some(res.get("data").unwrap().as_array().unwrap().get(0).unwrap().get("url").unwrap().to_string());
+            music.url = Some(res.get("data").unwrap().as_array().unwrap().get(0).unwrap().get("url").unwrap().as_str().unwrap().to_string());
         }
         Ok(music)
     }
@@ -61,10 +61,10 @@ impl NeteaseApi {
             });
             let url = None;
             let url_timeout = None;
-            let cover = Some(music.get("al").unwrap().get("picUrl").unwrap().to_string());
-            let title = music.get("name").unwrap().to_string();
-            let album = Some(music.get("al").unwrap().get("name").unwrap().to_string());
-            let artist = Some(music.get("ar").unwrap().as_array().unwrap().get(0).unwrap().get("name").unwrap().to_string());
+            let cover = Some(music.get("al").unwrap().get("picUrl").unwrap().as_str().unwrap().to_string());
+            let title = music.get("name").unwrap().as_str().unwrap().to_string();
+            let album = Some(music.get("al").unwrap().get("name").unwrap().as_str().unwrap().to_string());
+            let artist = Some(music.get("ar").unwrap().as_array().unwrap().get(0).unwrap().get("name").unwrap().as_str().unwrap().to_string());
             let year = None;
             let play_id = None;
             let requester = None;
