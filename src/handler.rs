@@ -1,12 +1,10 @@
 use std::{str::FromStr, sync::Arc};
 use crate::{
-    error::Error, music::{self, Music, PlayableMusic, SerializePlayList, SerializePlayableMusic}, source::MusicApi, user::User, vocasync::{self, Vocasync}
+    error::Error, music::{Music, SerializePlayList, SerializePlayableMusic}, source::{self, MusicApi}, vocasync::Vocasync
 };
-use axum::{
-    extract::{Path, State}, http::request, response::Response
-};
+use axum::extract::{Path, State};
 use rand::Rng;
-use tokio::{spawn, sync::RwLock};
+use tokio::spawn;
 
 pub async fn welcome(State(vocasync): State<Arc<Vocasync>>) -> Result<String, Error> {
     Ok("Welcome to Vocasync!".to_string())
@@ -68,4 +66,21 @@ pub async fn get_user_playlist_test(State(vocasync): State<Arc<Vocasync>>, Path(
 
 pub async fn get_music_by_playlist_test(State(vocasync): State<Arc<Vocasync>>, Path(id): Path<String>) -> Result<String, Error> {
     Ok(format!("{:#?}",vocasync.neteaseapi.get_music_by_playlist(id, 0).await))
+}
+
+pub async fn add_music_to_playlist(State(vocasync): State<Arc<Vocasync>>,Path((source, id)): Path<(source::SourceKind, String)>) -> Result<axum::response::Json<String>, Error> {
+    let music = match source {
+        source::SourceKind::Netease => vocasync.neteaseapi.get_music_by_id(id).await?,
+        source::SourceKind::Applemusic => vocasync.neteaseapi.get_music_by_id(id).await?,
+        source::SourceKind::Other => vocasync.neteaseapi.get_music_by_id(id).await?
+    };
+    vocasync.room.add_music(music, uuid::Uuid::new_v4()).await?;
+    let lock = vocasync.room.current_play.read().await;
+    if lock.is_none() {
+        drop(lock);
+        spawn(async move {
+            vocasync.room.play().await.unwrap();
+        });
+    }
+    Ok(axum::Json("{\"code\": 200}".to_string()))
 }

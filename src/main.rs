@@ -14,20 +14,17 @@ use crate::{
     handler::*
 };
 
-use std::{sync::Arc};
+use std::sync::Arc;
 use axum::{
-    routing::{get, post},
-    http::StatusCode,
-    Json, Router,
+    routing::get,
+    Router,
 };
 use serde_yaml;
-use anyhow::{Result, Context};
-use log;
-use tokio::sync::{Mutex, RwLock};
-use tracing_subscriber::{layer::{self, SubscriberExt}, util::SubscriberInitExt};
+use anyhow::Result;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tracing::info;
-use tower_sessions::{session_store::ExpiredDeletion, Expiry, Session, SessionManagerLayer};
-use tower_sessions_sqlx_store::{sqlx::PgPool, PostgresStore};
+use tower_sessions::SessionManagerLayer;
+use tower_sessions_sqlx_store::PostgresStore;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -42,10 +39,11 @@ async fn main() -> Result<()> {
     let session_layer = SessionManagerLayer::new(session_store)
         .with_secure(false);
 
-    let app = Router::new()
+        let app = Router::new()
         .route("/", get(welcome))
         .route("/api/currentPlay", get(get_current_play))
         .route("/api/playList", get(get_play_list))
+        .route("/add/:source/:id", get(add_music_to_playlist))
         .route("/test/play", get(play_test))
         .route("/test/add", get(add_test))
         .route("/test/search/:name", get(search_user_test))

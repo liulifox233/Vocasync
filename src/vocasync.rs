@@ -1,20 +1,14 @@
-use core::net;
-use std::{sync::Arc, thread::sleep, time};
-use axum::extract::rejection::NestedPathRejection;
-use tokio::sync::RwLock;
-use tower_sessions::{session_store::ExpiredDeletion, Expiry, Session, SessionManagerLayer};
-use tower_sessions_sqlx_store::{sqlx::PgPool, PostgresStore};
+use std::sync::Arc;
 use anyhow::Result;
-use std::ops::DerefMut;
 use std::ops::Deref;
 use crate::api::netease::NeteaseApi;
+use crate::music::Music;
 use crate::source::MusicApi;
 use crate::{
     config::Config,
-    music::{PlayableMusic, SerializePlayableMusic}, 
     room::Room
 };
-use sqlx::{postgres, pool};
+use sqlx::postgres;
 
 
 pub struct Inner{
@@ -51,6 +45,10 @@ impl Vocasync{
         Ok(res)
     }
 
+    pub async fn save_music(&self, music: Music) -> Result<()> {
+        //TODO
+        Ok(())
+    }
 }
 
 impl Deref for Vocasync {
