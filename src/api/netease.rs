@@ -54,41 +54,56 @@ impl NeteaseApi {
     }
 
     async fn parse_music(&self, res: &Value) -> Result<Vec<Music>> {
-        let mut music_list = Vec::new();
-        let res = res.get("songs").unwrap().as_array().unwrap();
-        for music in res.iter() {
-            let uuid = Uuid::new_v4();
-            let source = Some(Source {
-                id: music.get("id").unwrap().to_string(),
-                kind: source::SourceKind::Netease
-            });
-            let url = None;
-            let url_timeout = None;
-            let cover = Some(music.get("al").unwrap().get("picUrl").unwrap().as_str().unwrap().to_string());
-            let title = music.get("name").unwrap().as_str().unwrap().to_string();
-            let album = Some(music.get("al").unwrap().get("name").unwrap().as_str().unwrap().to_string());
-            let artist = Some(music.get("ar").unwrap().as_array().unwrap().get(0).unwrap().get("name").unwrap().as_str().unwrap().to_string());
-            let year = None;
-            let play_id = None;
-            let requester = None;
-            let duration = Duration::from_millis(music.get("dt").unwrap().as_u64().unwrap());
+        let songs = res.get("songs")
+            .and_then(|s| s.as_array())
+            .ok_or_else(|| anyhow::anyhow!("Invalid response format"))?;
 
-            let music_with_url = self.parse_music_url(Music {
-                uuid,
-                source,
-                url,
-                url_timeout,
-                cover,
-                title,
-                album,
-                artist,
-                year,
-                play_id,
-                requester,
-                duration,
-            }).await?;
+        let mut music_list = Vec::new();
+
+        for song in songs {
+            let music = Music {
+                uuid: Uuid::new_v4(),
+                source: Some(Source {
+                    id: song.get("id")
+                        .and_then(|id| id.as_u64())
+                        .ok_or_else(|| anyhow::anyhow!("Missing song id"))?
+                        .to_string(),
+                    kind: source::SourceKind::Netease,
+                }),
+                url: None,
+                url_timeout: None,
+                cover: song.get("al")
+                    .and_then(|al| al.get("picUrl"))
+                    .and_then(|url| url.as_str())
+                    .map(|url| url.to_string()),
+                title: song.get("name")
+                    .and_then(|name| name.as_str())
+                    .ok_or_else(|| anyhow::anyhow!("Missing song name"))?
+                    .to_string(),
+                album: song.get("al")
+                    .and_then(|al| al.get("name"))
+                    .and_then(|name| name.as_str())
+                    .map(|name| name.to_string()),
+                artist: song.get("ar")
+                    .and_then(|ar| ar.as_array())
+                    .and_then(|ar| ar.get(0))
+                    .and_then(|artist| artist.get("name"))
+                    .and_then(|name| name.as_str())
+                    .map(|name| name.to_string()),
+                year: None,
+                play_id: None,
+                requester: None,
+                duration: Duration::from_millis(
+                    song.get("dt")
+                        .and_then(|dt| dt.as_u64())
+                        .ok_or_else(|| anyhow::anyhow!("Missing song duration"))?
+                ),
+            };
+
+            let music_with_url = self.parse_music_url(music).await?;
             music_list.push(music_with_url);
-        };
+        }
+
         Ok(music_list)
     }
 

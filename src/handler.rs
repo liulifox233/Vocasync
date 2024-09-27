@@ -4,6 +4,7 @@ use crate::{
 };
 use axum::extract::{Path, State};
 use rand::Rng;
+use serde_json::Value;
 use tokio::spawn;
 
 pub async fn welcome(State(vocasync): State<Arc<Vocasync>>) -> Result<String, Error> {
@@ -68,7 +69,7 @@ pub async fn get_music_by_playlist_test(State(vocasync): State<Arc<Vocasync>>, P
     Ok(format!("{:#?}",vocasync.neteaseapi.get_music_by_playlist(id, 0).await))
 }
 
-pub async fn add_music_to_playlist(State(vocasync): State<Arc<Vocasync>>,Path((source, id)): Path<(source::SourceKind, String)>) -> Result<axum::response::Json<String>, Error> {
+pub async fn add_music_to_playlist(State(vocasync): State<Arc<Vocasync>>,Path((source, id)): Path<(source::SourceKind, String)>) -> Result<axum::response::Json<Value>, Error> {
     let music = match source {
         source::SourceKind::Netease => vocasync.neteaseapi.get_music_by_id(id).await?,
         source::SourceKind::Applemusic => vocasync.neteaseapi.get_music_by_id(id).await?,
@@ -82,5 +83,5 @@ pub async fn add_music_to_playlist(State(vocasync): State<Arc<Vocasync>>,Path((s
             vocasync.room.play().await.unwrap();
         });
     }
-    Ok(axum::Json("{\"code\": 200}".to_string()))
+    Ok(axum::Json(serde_json::json!({ "code": 200 })))
 }
