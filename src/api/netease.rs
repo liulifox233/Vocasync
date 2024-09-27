@@ -45,7 +45,10 @@ impl NeteaseApi {
         if res.get("code").unwrap().as_u64().unwrap() != 200 {
             return Err(anyhow::anyhow!("Get song failed!"));
         }else {
-            music.url = Some(res.get("data").unwrap().as_array().unwrap().get(0).unwrap().get("url").unwrap().as_str().unwrap().to_string());
+            music.url = match res.get("data").unwrap().as_array().unwrap().get(0).unwrap().get("url") {
+                Some(r) => Some(r.as_str().unwrap().to_string()),
+                None => return Err(anyhow::anyhow!("Get song failed!"))
+            };
         }
         Ok(music)
     }
