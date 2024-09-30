@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use anyhow::Result;
+use reqwest::Client;
 use std::ops::Deref;
 use crate::api::netease::NeteaseApi;
 use crate::music::Music;
@@ -15,7 +16,8 @@ pub struct Inner{
     pub config: Config,
     pub pg_pool: postgres::PgPool,
     pub room: Room,
-    pub neteaseapi: NeteaseApi
+    pub neteaseapi: NeteaseApi,
+    pub client: Arc<Client>
 }
 
 #[derive(Clone)]
@@ -27,19 +29,21 @@ impl Vocasync{
 
         let room = Room::new().await?.into();
 
-        let mut neteaseapi = NeteaseApi {
-            url: config.neteaseapi.url.clone(),
-            phone_num: config.neteaseapi.phone_num.clone(),
-            password: config.neteaseapi.password.clone(),
-            cookie: "".to_string()
-        };
+        let mut neteaseapi = NeteaseApi::init(
+            config.neteaseapi.url.clone(),
+            config.neteaseapi.phone_num.clone(),
+            config.neteaseapi.password.clone()
+        ).await?;
         neteaseapi.login().await?;
+
+        let client = Arc::new(Client::new());
         
         let inner = Arc::new(Inner {
             config,
             pg_pool,
             room,
             neteaseapi,
+            client
         });
         let res = Self(inner);
         Ok(res)

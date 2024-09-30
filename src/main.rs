@@ -39,11 +39,15 @@ async fn main() -> Result<()> {
     let session_layer = SessionManagerLayer::new(session_store)
         .with_secure(false);
 
-        let app = Router::new()
-        .route("/", get(welcome))
+    let proxy_router = Router::new()
+        .route("/*path", get(proxy))
+        .route("/", get(proxy_root));
+
+    let app = Router::new()
         .route("/api/currentPlay", get(get_current_play))
         .route("/api/playList", get(get_play_list))
-        .route("/add/:source/:id", get(add_music_to_playlist))
+        .route("/api/add/:source/:id", get(add_music_to_playlist))
+        .nest("/", proxy_router)
         .route("/test/play", get(play_test))
         .route("/test/add", get(add_test))
         .route("/test/search/:name", get(search_user_test))
@@ -76,7 +80,6 @@ mod tests {
             .with_secure(false);
 
             let app = Router::new()
-            .route("/", get(welcome))
             .route("/api/currentPlay", get(get_current_play))
             .route("/api/playList", get(get_play_list))
             .route("/add/:source/:id", get(add_music_to_playlist))
@@ -98,28 +101,28 @@ mod tests {
         });
         reqwest::get(
             format!(
-                "http://{}/test/add", 
+                "{}/test/add", 
                 config.listen_address.clone(),
             )
         ).await.unwrap();
 
         reqwest::get(
             format!(
-                "http://{}/add/Netease/1308258153", 
+                "{}/add/Netease/1308258153", 
                 config.listen_address.clone(),
             )
         ).await.unwrap();
 
         reqwest::get(
             format!(
-                "http://{}/api/currentPlay", 
+                "{}/api/currentPlay", 
                 config.listen_address.clone(),
             )
         ).await.unwrap();
 
         reqwest::get(
             format!(
-                "http://{}/api/playList", 
+                "{}/api/playList", 
                 config.listen_address.clone(),
             )
         ).await.unwrap();
