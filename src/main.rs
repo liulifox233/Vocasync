@@ -44,12 +44,6 @@ async fn main() -> Result<()> {
         .route("/api/currentPlay", get(get_current_play))
         .route("/api/playList", get(get_play_list))
         .route("/add/:source/:id", get(add_music_to_playlist))
-        .route("/test/play", get(play_test))
-        .route("/test/add", get(add_test))
-        .route("/test/search/:name", get(search_user_test))
-        .route("/test/music_id/:id", get(get_music_by_id_test))
-        .route("/test/get_user_playlist/:id", get(get_user_playlist_test))
-        .route("/test/get_music_by_playlist/:id", get(get_music_by_playlist_test))
         .with_state(vocasync)
         .layer(session_layer);
     let listener = tokio::net::TcpListener::bind(config.listen_address)
