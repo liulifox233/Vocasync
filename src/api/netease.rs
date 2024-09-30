@@ -1,9 +1,10 @@
 use crate::{music::Music, source::{MusicApi, PlayList, Source}, user::User};
 use anyhow::Result;
+use reqwest::{Client, Url};
 use serde_json::Value;
 use tracing::info;
 use uuid::Uuid;
-use std::{fs, time::Duration};
+use std::{fs, sync::Arc, time::Duration};
 use std::time::SystemTime;
 
 use crate::source;
@@ -14,34 +15,48 @@ pub struct NeteaseApi {
     pub phone_num: String,
     pub password: String,
     pub cookie: String,
+    pub client: Arc<Client>
 }
 
 impl NeteaseApi {
+    pub async fn init(
+        url: String,
+        phone_num: String,
+        password: String
+    ) -> Result<Self> {
+        let client = Arc::new(Client::new());
+        Ok(NeteaseApi {
+            url,
+            phone_num,
+            password,
+            cookie: String::new(),
+            client
+        })
+    }
+
     async fn check_cookie(&self, cookie: Option<String>) -> Result<()> {
         if cookie.is_none() {return Err(anyhow::anyhow!("Please check your cookie.txt"));}
-        let res = reqwest::get(
-            format!(
-                "{}/user/account?realIP=183.232.239.22&timestamp={}&cookie={}", 
-                self.url.clone(),
-                SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?.as_secs(),
-                cookie.unwrap().clone()
-            )).await?;
-        let res = res.json::<Value>().await?;
-        if res.get("profile").unwrap().is_null() {
+        let url = format!(
+            "{}/user/account?realIP=183.232.239.22&timestamp={}&cookie={}",
+            self.url,
+            SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?.as_secs(),
+            cookie.unwrap()
+        );
+        let res = self.client.get(&url).send().await?.json::<Value>().await?;
+        if res.get("profile").map_or(true, |profile| profile.is_null()) {
             return Err(anyhow::anyhow!("Please check your cookie.txt"));
         }
         Ok(())
     }
     
     async fn parse_music_url(&self, mut music: Music) -> Result<Music> {
-        let res = reqwest::get(
-            format!(
-                "{}/song/url?realIP=183.232.239.22&id={}&cookie={}", 
-                self.url.clone(),
-                music.source.clone().unwrap().id,
-                self.cookie.clone()
-            )).await?;
-        let res = res.json::<Value>().await?;
+        let url = format!(
+            "{}/song/url?realIP=183.232.239.22&id={}&cookie={}", 
+            self.url.clone(),
+            music.source.clone().unwrap().id,
+            self.cookie.clone()
+        );
+        let res = self.client.get(&url).send().await?.json::<Value>().await?;
         if res.get("code").unwrap().as_u64().unwrap() != 200 {
             return Err(anyhow::anyhow!("Get song failed!"));
         }else {
@@ -108,14 +123,14 @@ impl NeteaseApi {
     }
 
     async fn phone_num_login(&mut self) -> Result<()>{
-        let res = reqwest::get(
-            format!(
-                "{}/login/cellphone?realIP=183.232.239.22&phone={}&password={}", 
-                self.url.clone(),
-                self.phone_num.clone(),
-                self.password.clone()
-            )).await?;
-        match res.json::<Value>().await?.get("cookie") {
+        let url = format!(
+            "{}/login/cellphone?realIP=183.232.239.22&phone={}&password={}", 
+            self.url.clone(),
+            self.phone_num.clone(),
+            self.password.clone()
+        );
+        let res = self.client.get(&url).send().await?.json::<Value>().await?;
+        match res.get("cookie") {
             Some(v) => {
                 self.cookie = v.to_string();
             }
@@ -155,14 +170,13 @@ impl MusicApi for NeteaseApi {
     }
 
     async fn get_music_by_id(&self, id: String) -> anyhow::Result<Music> {
-        let res = reqwest::get(
-            format!(
-                "{}/song/detail?ids={}&cookie={}", 
-                self.url.clone(),
-                id,
-                self.cookie.clone()
-            )).await?;
-        let res = res.json::<Value>().await?;
+        let url = format!(
+            "{}/song/detail?ids={}&cookie={}", 
+            self.url.clone(),
+            id,
+            self.cookie.clone()
+        );
+        let res = self.client.get(&url).send().await?.json::<Value>().await?;
         if res.get("code").unwrap().as_u64().unwrap() != 200 || res.get("songs").unwrap().as_array().unwrap().len() == 0 {
             return Err(anyhow::anyhow!("Song not found"));
         }
@@ -171,14 +185,13 @@ impl MusicApi for NeteaseApi {
     }
 
     async fn search_user(&self, name: String) -> anyhow::Result<Vec<User>> {
-        let res = reqwest::get(
-            format!(
-                "{}/search?realIP=183.232.239.22&type=1002&keywords={}&cookie={}", 
-                self.url.clone(),
-                name,
-                self.cookie.clone(),
-            )).await?;
-        let res = res.json::<Value>().await?;
+        let url = format!(
+            "{}/search?realIP=183.232.239.22&type=1002&keywords={}&cookie={}", 
+            self.url.clone(),
+            name,
+            self.cookie.clone(),
+        );
+        let res = self.client.get(&url).send().await?.json::<Value>().await?;
         if res.get("code").unwrap().as_u64().unwrap() != 200 {
             return Err(anyhow::anyhow!("Search User failed!"));
         }
@@ -206,14 +219,13 @@ impl MusicApi for NeteaseApi {
         Ok(user_list)
     }
     async fn get_user_playlist(&self, id: String) -> anyhow::Result<Vec<source::PlayList>> {
-        let res = reqwest::get(
-        format!(
+        let url = format!(
             "{}/user/playlist?realIP=183.232.239.22&uid={}&cookie={}", 
             self.url.clone(),
             id,
             self.cookie.clone(),
-        )).await?;
-        let res = res.json::<Value>().await?;
+        );
+        let res = self.client.get(&url).send().await?.json::<Value>().await?;
         if res.get("code").unwrap().as_u64().unwrap() != 200 {
             return Err(anyhow::anyhow!("Get user playlist failed!"));
         }
@@ -234,15 +246,14 @@ impl MusicApi for NeteaseApi {
     }
 
     async fn get_music_by_playlist(&self, id: String, offset: u64) -> anyhow::Result<Vec<Music>> {
-        let res = reqwest::get(
-            format!(
-                "{}/playlist/track/all?realIP=183.232.239.22&id={}&limit=10&offset={}&cookie={}", 
-                self.url.clone(),
-                id,
-                offset,
-                self.cookie.clone()
-            )).await?;
-        let res = res.json::<Value>().await?;
+        let url = format!(
+            "{}/playlist/track/all?realIP=183.232.239.22&id={}&limit=10&offset={}&cookie={}", 
+            self.url.clone(),
+            id,
+            offset,
+            self.cookie.clone()
+        );
+        let res = self.client.get(&url).send().await?.json::<Value>().await?;
         if res.get("code").unwrap().as_u64().unwrap() != 200 {
             return Err(anyhow::anyhow!("Get music list failed!"));
         }

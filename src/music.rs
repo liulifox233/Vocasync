@@ -1,10 +1,7 @@
 use serde::{self,Serialize};
 use uuid::Uuid;
 use std::time::{self, Duration};
-use crate::{
-    source::{Source,self},
-    user::User
-};
+use crate::source::Source;
 
 
 #[derive(Clone, Serialize, Debug)]

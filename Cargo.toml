@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.89"
-axum = {version = "0.7.5"}
+axum = { version = "0.7.5", features = ["ws"] }
 deadpool = "0.12.1"
 log = "0.4.22"
 rand = "0.8.5"

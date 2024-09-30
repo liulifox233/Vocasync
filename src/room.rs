@@ -20,23 +20,15 @@ pub struct Room {
 }
 
 impl Room {
-    pub async fn new() -> Result<Self>{//暂时直接初始化，之后会加上从数据库加载数据的功能
-        let userlist = Vec::new();
-        let musiclist = Vec::new();
-        let last_time = time::SystemTime::now();
-        let last_person = "最後の初音ミク".to_string();
-        let musiclist = RwLock::new(musiclist);
-        let current_play = RwLock::new(None);
-
-        let res = Self {
-            userlist,
-            musiclist,
-            last_time,
-            last_person,
-            current_play,
+    pub async fn new() -> Result<Self> {
+        let room = Self {
+            userlist: Vec::new(),
+            musiclist: RwLock::new(Vec::new()),
+            last_time: time::SystemTime::now(),
+            last_person: "最後の初音ミク".to_string(),
+            current_play: RwLock::new(None),
         };
-
-        Ok(res)
+        Ok(room)
     }
 
     pub async fn get_play_list_serialize(&self) -> Result<SerializePlayList> {
