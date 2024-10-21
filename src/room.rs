@@ -1,14 +1,12 @@
-use std::time;
 use anyhow::{Ok, Result};
+use std::time;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
 use crate::music::SerializePlayList;
 use crate::{
-    music::{
-        PlayableMusic, Music, SerializePlayableMusic
-    }, 
-    user::User
+    music::{Music, PlayableMusic, SerializePlayableMusic},
+    user::User,
 };
 
 pub struct Room {
@@ -35,11 +33,11 @@ impl Room {
         let music_list = self.musiclist.read().await.to_owned();
         let play_now = self.current_play.read().await.to_owned();
         let total = music_list.len().try_into()?;
-        
+
         let res = SerializePlayList {
             total,
             music_list,
-            play_now
+            play_now,
         };
         Ok(res)
     }
@@ -52,9 +50,13 @@ impl Room {
         match current_music {
             Some(m) => {
                 is_play = true;
-                position = Some(time::SystemTime::now().duration_since(m.start_time)?.as_secs());
+                position = Some(
+                    time::SystemTime::now()
+                        .duration_since(m.start_time)?
+                        .as_secs(),
+                );
                 music = Some(m.music)
-            },
+            }
             None => {
                 is_play = false;
                 position = None;
@@ -65,7 +67,7 @@ impl Room {
         let res = SerializePlayableMusic {
             music,
             position,
-            is_play
+            is_play,
         };
         Ok(res)
     }
@@ -85,12 +87,13 @@ impl Room {
                 let removed_music = musiclist.remove(p);
                 musiclist.push(removed_music);
                 Ok(())
-            },
-            None => Err(anyhow::anyhow!("Can not find music"))
+            }
+            None => Err(anyhow::anyhow!("Can not find music")),
         }
     }
 
-    pub async fn play(&self) -> Result<()> { // 既可以用作播放也可用作切歌
+    pub async fn play(&self) -> Result<()> {
+        // 既可以用作播放也可用作切歌
         loop {
             let mut musiclist_write = self.musiclist.write().await;
             if let Some(next_play) = musiclist_write.pop() {
@@ -104,7 +107,9 @@ impl Room {
                 *current_play_write = now_play.clone();
                 drop(current_play_write);
                 tokio::time::sleep(duration + std::time::Duration::new(1, 0)).await;
-                if let (Some(before), Some(now)) = (self.current_play.read().await.clone(), now_play) {
+                if let (Some(before), Some(now)) =
+                    (self.current_play.read().await.clone(), now_play)
+                {
                     if before.music.play_id != now.music.play_id {
                         return Ok(());
                     }
@@ -116,6 +121,4 @@ impl Room {
             }
         }
     }
-
 }
-

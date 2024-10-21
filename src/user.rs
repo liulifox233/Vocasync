@@ -1,7 +1,7 @@
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use tower_sessions::Session;
 use uuid::Uuid;
-use anyhow::Result;
 
 use crate::source::Source;
 
@@ -10,7 +10,7 @@ pub struct User {
     pub id: Uuid,
     pub source: Option<Source>,
     pub name: String,
-    pub avatar: Option<String>
+    pub avatar: Option<String>,
 }
 
 impl User {
@@ -25,7 +25,7 @@ impl User {
                     id,
                     source: None,
                     name,
-                    avatar
+                    avatar,
                 }
             }
         };

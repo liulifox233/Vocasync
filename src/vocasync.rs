@@ -1,28 +1,24 @@
-use std::sync::Arc;
-use anyhow::Result;
-use reqwest::Client;
-use std::ops::Deref;
 use crate::api::netease::NeteaseApi;
 use crate::music::Music;
 use crate::source::MusicApi;
-use crate::{
-    config::Config,
-    room::Room
-};
+use crate::{config::Config, room::Room};
+use anyhow::Result;
+use reqwest::Client;
 use sqlx::postgres;
+use std::ops::Deref;
+use std::sync::Arc;
 
-
-pub struct Inner{
+pub struct Inner {
     pub config: Config,
     pub pg_pool: postgres::PgPool,
     pub room: Room,
     pub neteaseapi: NeteaseApi,
-    pub client: Arc<Client>
+    pub client: Arc<Client>,
 }
 
 #[derive(Clone)]
 pub struct Vocasync(Arc<Inner>);
-impl Vocasync{
+impl Vocasync {
     pub async fn new(config: Config) -> Result<Self> {
         config.check().await?;
         let pg_pool = postgres::PgPool::connect_lazy(&config.database_url)?;
@@ -32,18 +28,19 @@ impl Vocasync{
         let mut neteaseapi = NeteaseApi::init(
             config.neteaseapi.url.clone(),
             config.neteaseapi.phone_num.clone(),
-            config.neteaseapi.password.clone()
-        ).await?;
+            config.neteaseapi.password.clone(),
+        )
+        .await?;
         neteaseapi.login().await?;
 
         let client = Arc::new(Client::new());
-        
+
         let inner = Arc::new(Inner {
             config,
             pg_pool,
             room,
             neteaseapi,
-            client
+            client,
         });
         let res = Self(inner);
         Ok(res)
@@ -62,5 +59,3 @@ impl Deref for Vocasync {
         &self.0
     }
 }
-
-

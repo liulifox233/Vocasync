@@ -1,15 +1,21 @@
-use std::{str::FromStr, sync::Arc};
 use crate::{
-    error::Error, music::{Music, SerializePlayList, SerializePlayableMusic}, source::{self, MusicApi}, vocasync::Vocasync
+    error::Error,
+    music::{Music, SerializePlayList, SerializePlayableMusic},
+    source::{self, MusicApi},
+    vocasync::Vocasync,
 };
 use axum::extract::{Path, State};
 use rand::Rng;
 use serde_json::Value;
+use std::{str::FromStr, sync::Arc};
 use tokio::spawn;
 
-
-pub async fn get_current_play(State(vocasync): State<Arc<Vocasync>>) -> Result<axum::response::Json<SerializePlayableMusic>, Error> {
-    Ok(axum::Json(vocasync.room.get_current_play_serialize().await?))
+pub async fn get_current_play(
+    State(vocasync): State<Arc<Vocasync>>,
+) -> Result<axum::response::Json<SerializePlayableMusic>, Error> {
+    Ok(axum::Json(
+        vocasync.room.get_current_play_serialize().await?,
+    ))
 }
 
 pub async fn play_test(State(vocasync): State<Arc<Vocasync>>) -> Result<String, Error> {
@@ -20,7 +26,7 @@ pub async fn play_test(State(vocasync): State<Arc<Vocasync>>) -> Result<String, 
 }
 
 pub async fn add_test(State(vocasync): State<Arc<Vocasync>>) -> Result<String, Error> {
-    let music = Music{
+    let music = Music {
         uuid: uuid::Uuid::new_v4(),
         source: None,
         url: Some(String::from_str("http://localhost:11451")?),
@@ -32,7 +38,7 @@ pub async fn add_test(State(vocasync): State<Arc<Vocasync>>) -> Result<String, E
         year: None,
         play_id: Some(uuid::Uuid::new_v4()),
         requester: None,
-        duration: tokio::time::Duration::new(rand::thread_rng().gen_range(0..10), 0)
+        duration: tokio::time::Duration::new(rand::thread_rng().gen_range(0..10), 0),
     };
 
     vocasync.room.add_music(music, uuid::Uuid::new_v4()).await?;
@@ -53,41 +59,53 @@ pub async fn get_play_list(
 }
 
 pub async fn search_user_test(
-    State(vocasync): State<Arc<Vocasync>>, 
-    Path(name): Path<String>
+    State(vocasync): State<Arc<Vocasync>>,
+    Path(name): Path<String>,
 ) -> Result<axum::response::Json<String>, Error> {
-    Ok(axum::Json(format!("{:#?}",vocasync.neteaseapi.search_user(name).await)))
+    Ok(axum::Json(format!(
+        "{:#?}",
+        vocasync.neteaseapi.search_user(name).await
+    )))
 }
 
 pub async fn get_music_by_id_test(
-    State(vocasync): State<Arc<Vocasync>>, 
+    State(vocasync): State<Arc<Vocasync>>,
     Path(id): Path<String>,
 ) -> Result<String, Error> {
-    Ok(format!("{:#?}",vocasync.neteaseapi.get_music_by_id(id).await))
+    Ok(format!(
+        "{:#?}",
+        vocasync.neteaseapi.get_music_by_id(id).await
+    ))
 }
 
 pub async fn get_user_playlist_test(
-    State(vocasync): State<Arc<Vocasync>>, 
-    Path(id): Path<String>
+    State(vocasync): State<Arc<Vocasync>>,
+    Path(id): Path<String>,
 ) -> Result<String, Error> {
-    Ok(format!("{:#?}",vocasync.neteaseapi.get_user_playlist(id).await))
+    Ok(format!(
+        "{:#?}",
+        vocasync.neteaseapi.get_user_playlist(id).await
+    ))
 }
 
 pub async fn get_music_by_playlist_test(
-    State(vocasync): State<Arc<Vocasync>>, 
-    Path(id): Path<String>
+    State(vocasync): State<Arc<Vocasync>>,
+    Path(id): Path<String>,
 ) -> Result<String, Error> {
-    Ok(format!("{:#?}",vocasync.neteaseapi.get_music_by_playlist(id, 0).await))
+    Ok(format!(
+        "{:#?}",
+        vocasync.neteaseapi.get_music_by_playlist(id, 0).await
+    ))
 }
 
 pub async fn add_music_to_playlist(
     State(vocasync): State<Arc<Vocasync>>,
-    Path((source, id)): Path<(source::SourceKind, String)>
+    Path((source, id)): Path<(source::SourceKind, String)>,
 ) -> Result<axum::response::Json<Value>, Error> {
     let music = match source {
         source::SourceKind::Netease => vocasync.neteaseapi.get_music_by_id(id).await?,
         source::SourceKind::Applemusic => vocasync.neteaseapi.get_music_by_id(id).await?,
-        source::SourceKind::Other => vocasync.neteaseapi.get_music_by_id(id).await?
+        source::SourceKind::Other => vocasync.neteaseapi.get_music_by_id(id).await?,
     };
     vocasync.room.add_music(music, uuid::Uuid::new_v4()).await?;
     let lock = vocasync.room.current_play.read().await;
@@ -122,7 +140,6 @@ pub async fn proxy(
 
     Ok(response)
 }
-
 
 pub async fn proxy_root(
     State(vocasync): State<Arc<Vocasync>>,

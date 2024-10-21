@@ -3,16 +3,16 @@ use serde::{Deserialize, Serialize};
 use crate::{music::Music, user::User};
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-pub enum SourceKind{
+pub enum SourceKind {
     Netease,
     Applemusic,
-    Other
+    Other,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct  Source {
+pub struct Source {
     pub id: String,
-    pub kind: SourceKind
+    pub kind: SourceKind,
 }
 
 #[derive(Debug)]

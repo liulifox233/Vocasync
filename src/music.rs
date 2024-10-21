@@ -1,26 +1,25 @@
-use serde::{self,Serialize};
-use uuid::Uuid;
-use std::time::{self, Duration};
 use crate::source::Source;
-
+use serde::{self, Serialize};
+use std::time::{self, Duration};
+use uuid::Uuid;
 
 #[derive(Clone, Serialize, Debug)]
-pub struct PlayableMusic{
+pub struct PlayableMusic {
     pub music: Music,
-    pub start_time: time::SystemTime
+    pub start_time: time::SystemTime,
 }
 
 #[derive(Serialize, Debug)]
-pub struct SerializePlayableMusic{
+pub struct SerializePlayableMusic {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub music: Option<Music>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<u64>,
-    pub is_play: bool
+    pub is_play: bool,
 }
 
 #[derive(Clone, Serialize, Debug)]
-pub struct Music{
+pub struct Music {
     pub uuid: Uuid,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<Source>,
@@ -40,13 +39,13 @@ pub struct Music{
     pub play_id: Option<Uuid>,
     #[serde(skip_serializing)]
     pub requester: Option<Uuid>,
-    pub duration: Duration
+    pub duration: Duration,
 }
 
 #[derive(Serialize)]
-pub struct SerializePlayList{
+pub struct SerializePlayList {
     pub total: u64,
     pub music_list: Vec<Music>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub play_now: Option<PlayableMusic>
+    pub play_now: Option<PlayableMusic>,
 }
